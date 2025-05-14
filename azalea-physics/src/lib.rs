@@ -12,8 +12,7 @@ use azalea_core::{
     tick::GameTick,
 };
 use azalea_entity::{
-    metadata::Sprinting, move_relative, Attributes, InLoadedChunk, Jumping, LocalEntity,
-    LookDirection, OnClimbable, Physics, Pose, Position,
+    metadata::{ShiftKeyDown, Sprinting}, move_relative, Attributes, InLoadedChunk, Jumping, LocalEntity, LookDirection, OnClimbable, Physics, PlayerAbilities, Pose, Position
 };
 use azalea_world::{Instance, InstanceContainer, InstanceName};
 use bevy_app::{App, Plugin};
@@ -23,7 +22,7 @@ use bevy_ecs::{
     system::{Query, Res},
     world::Mut,
 };
-use collision::{move_colliding, MoverType};
+use collision::{maybe_back_off_from_edge, move_colliding, MoverType};
 
 /// A Bevy [`SystemSet`] for running physics that makes entities do things.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
@@ -57,6 +56,8 @@ fn travel(
             &InstanceName,
             &OnClimbable,
             &Jumping,
+            &PlayerAbilities,
+            &ShiftKeyDown,
         ),
         (With<LocalEntity>, With<InLoadedChunk>),
     >,
@@ -72,6 +73,8 @@ fn travel(
         world_name,
         on_climbable,
         jumping,
+        player_abilities,
+        shift_key_down,
     ) in &mut query
     {
         let Some(world_lock) = instance_container.get(world_name) else {
@@ -120,6 +123,8 @@ fn travel(
                 on_climbable,
                 pose,
                 jumping,
+                player_abilities,
+                shift_key_down,
             },
         );
 
@@ -254,6 +259,8 @@ struct HandleRelativeFrictionAndCalculateMovementOpts<'a> {
     on_climbable: &'a OnClimbable,
     pose: Option<&'a Pose>,
     jumping: &'a Jumping,
+    player_abilities: &'a PlayerAbilities,
+    shift_key_down: &'a ShiftKeyDown
 }
 
 fn handle_relative_friction_and_calculate_movement(
@@ -268,6 +275,8 @@ fn handle_relative_friction_and_calculate_movement(
         on_climbable,
         pose,
         jumping,
+        player_abilities,
+        shift_key_down
     }: HandleRelativeFrictionAndCalculateMovementOpts<'_>,
 ) -> Vec3 {
     move_relative(
@@ -282,13 +291,15 @@ fn handle_relative_friction_and_calculate_movement(
     );
 
     physics.velocity = handle_on_climbable(physics.velocity, on_climbable, &position, world, pose);
-
+    physics.velocity = maybe_back_off_from_edge(player_abilities, &physics.velocity, MoverType::Own, shift_key_down, world, physics);
+    
     move_colliding(
         &MoverType::Own,
         &physics.velocity.clone(),
         world,
         &mut position,
         physics,
+        player_abilities
     )
     .expect("Entity should exist.");
     // let delta_movement = entity.delta;

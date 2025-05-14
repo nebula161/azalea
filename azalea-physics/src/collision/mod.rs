@@ -280,7 +280,7 @@ fn is_above_ground(
             physics
         )
 }
-fn maybe_back_off_from_edge(
+pub fn maybe_back_off_from_edge(
     abilities: &PlayerAbilities,
     movement: &Vec3,
     mover_type: MoverType,

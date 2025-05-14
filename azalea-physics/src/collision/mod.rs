@@ -16,6 +16,7 @@ pub use shape::*;
 
 use self::world_collisions::get_block_collisions;
 
+#[derive(PartialEq)]
 pub enum MoverType {
     Own,
     Player,
@@ -76,7 +77,7 @@ fn collide(movement: &Vec3, world: &Instance, physics: &azalea_entity::Physics) 
 
     let on_ground = physics.on_ground || y_collision && movement.y < 0.;
 
-    let max_up_step = 0.6;
+    let max_up_step = 0.6; // If this is set to 0.6, it should actually be reading from an attribute
     if max_up_step > 0. && on_ground && (x_collision || z_collision) {
         let mut step_to_delta = collide_bounding_box(
             &Vec3 {
@@ -252,22 +253,98 @@ pub fn move_colliding(
     Ok(())
 }
 
+fn can_fall_atleast(
+    movement: &Vec3,
+    world: &Instance,
+    physics: &azalea_entity::Physics
+) -> bool {
+    // Presumably not finishing the entire movement vector means there is a collision here preventing further movement, and you can't fall further this way
+    return collide(
+        movement,
+        world, 
+        physics
+    ) != *movement
+}
+
+fn is_above_ground(   
+    offset: f64,
+    world: &Instance,
+    physics: &azalea_entity::Physics,
+) -> bool {
+    let fall_distance = 0.0;
+    return physics.on_ground ||
+        fall_distance < offset && 
+        !can_fall_atleast(
+            &Vec3 { x: 0.0, y: offset - fall_distance, z: 0.0}, 
+            world, 
+            physics
+        )
+}
 fn maybe_back_off_from_edge(
     abilities: &PlayerAbilities,
     movement: &Vec3,
     mover_type: MoverType,
-    is_shift_key_held: &ShiftKeyDown
+    is_shift_key_held: &ShiftKeyDown,
+    world: &Instance,
+    physics: &azalea_entity::Physics
 ) -> Vec3 {
-    // if (!this.abilities.flying
-    //     && movement.y <= 0.0
-    //     && (moverType == MoverType.SELF || moverType == MoverType.PLAYER)
-    //     && this.isStayingOnGroundSurface()
-    //     && this.isAboveGround()) {
+    let max_up_step = 0.6;
+    let is_staying_on_ground = is_shift_key_held;
+    let is_above_ground = is_above_ground(max_up_step, world, physics);
 
-    let is_backing_off = !abilities.flying
-        && movement.y <= 0.
-        && matches!(mover_type, MoverType::Own | MoverType::Player)
+    if !abilities.flying
+         && movement.y <= 0.0
+         && (mover_type == MoverType::Player || mover_type == MoverType::Own)
+         && is_staying_on_ground.0
+         && is_above_ground {
         
+        let mut return_x = movement.x;
+        let mut return_z = movement.z;
+
+        let dist_travel_x = return_x.signum();
+        let dist_travel_z = return_z.signum();
+
+        // FIX: THEORETICALLY UNLIMITED LOOPS
+        while return_x != 0.0 && can_fall_atleast(&Vec3 { x: movement.x, y: max_up_step, z: 0.0 }, world, physics) {
+            if return_x <= 0.05 {
+                return_x = 0.0;
+                break;
+            }
+
+            return_x -= dist_travel_x;
+        }
+
+        while return_z != 0.0 && can_fall_atleast(&Vec3 { x: 0.0, y: max_up_step, z: return_z}, world, physics) {
+            if return_z <= 0.05 {
+                return_z = 0.0;
+                break;
+            }
+
+            return_z -= dist_travel_z;
+        }
+       
+        while return_x != 0.0 && return_z != 0.0 && can_fall_atleast(&Vec3 { x: return_x, y: max_up_step, z: return_z}, world, physics) {
+            if return_x <= 0.05 {
+                return_x = 0.0;
+            } else {
+                return_x -= dist_travel_x;
+            }
+
+            if return_z <= 0.05 {
+                return_z = 0.0;
+            } else {
+                return_z -= dist_travel_z;
+            }
+        }
+
+        Vec3 {
+            x: return_x,
+            y: movement.y,
+            z: return_z
+        }
+    } else {
+        *movement
+    }   
 }
 
 fn collide_bounding_box(

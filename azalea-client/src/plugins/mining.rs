@@ -321,7 +321,7 @@ fn handle_mining_queued(
                     &inventory.inventory_menu,
                     fluid_on_eyes,
                     physics,
-                ) >= 1.
+                ) > 1.
             {
                 // block was broken instantly (instamined)
                 commands.trigger_targets(

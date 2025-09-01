@@ -10,7 +10,7 @@ use azalea_entity::{
     Dead, EntityBundle, EntityKindComponent, HasClientLoaded, LoadedBy, LocalEntity, LookDirection,
     Physics, PlayerAbilities, Position, RelativeEntityUpdate,
     indexing::{EntityIdIndex, EntityUuidIndex},
-    metadata::{Health, Experience, apply_metadata},
+    metadata::{Health, apply_metadata},
 };
 use azalea_protocol::{
     common::movements::MoveFlags,
@@ -33,7 +33,7 @@ use crate::{
     inventory::{
         ClientSideCloseContainerEvent, Inventory, MenuOpenedEvent, SetContainerContentEvent,
     },
-    local_player::{Hunger, InstanceHolder, LocalGameMode, TabList},
+    local_player::{Hunger, Experience, InstanceHolder, LocalGameMode, TabList},
     movement::{KnockbackEvent, KnockbackType},
     packet::as_system,
     player::{GameProfileComponent, PlayerInfo},

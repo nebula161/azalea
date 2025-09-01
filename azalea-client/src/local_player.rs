@@ -38,6 +38,7 @@ pub struct InstanceHolder {
     pub instance: Arc<RwLock<Instance>>,
 }
 
+
 /// The gamemode of a local player. For a non-local player, you can look up the
 /// player in the [`TabList`].
 #[derive(Component, Clone, Debug, Copy)]
@@ -108,6 +109,12 @@ impl Hunger {
     }
 }
 
+#[derive(Component, Clone)]
+pub struct Experience {
+    pub level: u32,
+    pub total: u32,
+    pub progress: f32
+}
 impl InstanceHolder {
     /// Create a new `InstanceHolder` for the given entity.
     ///

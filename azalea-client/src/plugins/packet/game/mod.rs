@@ -10,7 +10,7 @@ use azalea_entity::{
     Dead, EntityBundle, EntityKindComponent, HasClientLoaded, LoadedBy, LocalEntity, LookDirection,
     Physics, PlayerAbilities, Position, RelativeEntityUpdate,
     indexing::{EntityIdIndex, EntityUuidIndex},
-    metadata::{Health, apply_metadata},
+    metadata::{Health, Experience, apply_metadata},
 };
 use azalea_protocol::{
     common::movements::MoveFlags,
@@ -782,6 +782,11 @@ impl GamePacketHandler<'_> {
 
     pub fn set_experience(&mut self, p: &ClientboundSetExperience) {
         debug!("Got set experience packet {p:?}");
+
+        as_system::<Query<&mut Experience>>(self.ecs, |mut query| {
+            let mut component = query.get_mut(self.player).unwrap();         
+            (component.progress, component.level, component.total) = (p.experience_progress, p.experience_level, p.total_experience);
+        });
     }
 
     pub fn teleport_entity(&mut self, p: &ClientboundTeleportEntity) {

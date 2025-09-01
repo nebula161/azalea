@@ -190,6 +190,12 @@ pub struct AutoSpinAttack(pub bool);
 pub struct AbstractLivingUsingItem(pub bool);
 #[derive(Component, Deref, DerefMut, Clone)]
 pub struct Health(pub f32);
+#[derive(Component, Clone)]
+pub struct Experience {
+    pub level: u32,
+    pub total: u32,
+    pub progress: f32
+}
 #[derive(Component, Deref, DerefMut, Clone)]
 pub struct EffectParticles(pub Vec<Particle>);
 #[derive(Component, Deref, DerefMut, Clone)]

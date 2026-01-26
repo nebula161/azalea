@@ -34,7 +34,7 @@ impl Plugin for InventoryPlugin {
         app.add_systems(
             GameTick,
             (
-                ensure_has_sent_carried_item.after(super::mining::handle_mining_queued),
+                ensure_has_sent_carried_item.before(super::mining::handle_mining_queued),
                 collect_equipment_changes
                     .after(super::interact::handle_start_use_item_queued)
                     .before(azalea_physics::ai_step),
